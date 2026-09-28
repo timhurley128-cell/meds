@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Medications</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Meds">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#16404D">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root {
+    --paper: #F6F8F8;
+    --card: #FFFFFF;
+    --ink: #13262C;
+    --ink-soft: #56696F;
+    --line: #D5DFE2;
+    --teal: #16404D;
+    --teal-mid: #2A6F82;
+    --teal-soft: #E3EEF1;
+    --amber-bg: #FFF3DC;
+    --amber-ink: #7E4C00;
+    --amber-line: #F0CF94;
+    --danger: #A83A30;
+    --rounded: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
+    box-sizing: border-box;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0F1A1D;
+      --card: #172428;
+      --ink: #E8F0F2;
+      --ink-soft: #9DB0B5;
+      --line: #2A3B40;
+      --teal: #8EC5D6;
+      --teal-mid: #8EC5D6;
+      --teal-soft: #1D3238;
+      --amber-bg: #33260E;
+      --amber-ink: #F2C77A;
+      --amber-line: #5C4412;
+      --danger: #E8847A;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
+    font-size: 17px;
+    line-height: 1.4;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  button { font: inherit; color: inherit; border: none; background: none; cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--teal-mid); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  .wrap { max-width: 540px; margin: 0 auto; padding: 0 18px 40px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 0 14px;
+  }
+  .topbar h1 { font-size: 2rem; line-height: 1.1; margin: 0; letter-spacing: -0.02em; }
+  .round-btn {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--teal); color: var(--paper);
+    font-size: 1.8rem; line-height: 1; display: grid; place-items: center;
+  }
+  .back {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--teal-mid); font-weight: 600; font-size: 1.05rem;
+    padding: 18px 0 10px;
+  }
+
+  /* ---------- notices ---------- */
+  .notice {
+    background: var(--teal-soft); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 16px; font-size: 0.95rem;
+  }
+  .notice strong { display: block; margin-bottom: 2px; }
+
+  /* ---------- med list: prescription-label cards ---------- */
+  .list { display: flex; flex-direction: column; gap: 12px; }
+  .med {
+    display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+    background: var(--card); border: 1px solid var(--line);
+    border-left: 8px solid var(--teal);
+    border-radius: 10px; padding: 18px 18px 18px 16px;
+  }
+  .med:active { background: var(--teal-soft); }
+  .med .text { flex: 1; min-width: 0; }
+  .med .name { font-size: 1.5rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+  .med .dose {
+    font-family: var(--rounded); font-size: 1.35rem; font-weight: 600;
+    color: var(--teal-mid); margin-top: 2px;
+  }
+  .med .chev { color: var(--ink-soft); font-size: 1.6rem; }
+
+  .empty { text-align: center; padding: 48px 12px; color: var(--ink-soft); }
+  .empty p { margin: 0 0 18px; font-size: 1.1rem; }
+
+  /* ---------- backup status ---------- */
+  .backup {
+    margin-top: 28px; border-radius: 12px; padding: 16px;
+    background: var(--card); border: 1px solid var(--line);
+  }
+  .backup.stale { background: var(--amber-bg); border-color: var(--amber-line); color: var(--amber-ink); }
+  .backup .status { font-weight: 600; margin-bottom: 12px; }
+  .backup .how { display: block; margin-top: 12px; color: var(--teal-mid); font-weight: 600; }
+  .backup.stale .how { color: var(--amber-ink); text-decoration: underline; }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    display: block; width: 100%; padding: 15px; border-radius: 12px;
+    font-weight: 600; font-size: 1.05rem; text-align: center;
+  }
+  .btn.primary { background: var(--teal); color: var(--paper); }
+  .btn.plain { background: var(--card); border: 1px solid var(--line); }
+  .btn.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+  .row { display: flex; gap: 10px; margin-top: 12px; }
+  .row .btn { flex: 1; }
+
+  /* ---------- detail ---------- */
+  .d-name { font-size: 2.1rem; font-weight: 800; line-height: 1.1; margin: 4px 0 4px; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+  .d-dose { font-family: var(--rounded); font-size: 1.9rem; font-weight: 700; color: var(--teal-mid); margin-bottom: 20px; }
+  .fields { background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+  .field { padding: 13px 16px; border-bottom: 1px solid var(--line); }
+  .field:last-child { border-bottom: none; }
+  .field .k { font-size: 0.85rem; color: var(--ink-soft); }
+  .field .v { font-size: 1.15rem; }
+  .field .v.unset { color: var(--ink-soft); font-style: italic; }
+  h2 { font-size: 1.15rem; margin: 26px 0 10px; }
+  .timeline { border-left: 3px solid var(--line); margin-left: 8px; padding-left: 16px; }
+  .step { position: relative; padding: 4px 0 14px; }
+  .step::before {
+    content: ""; position: absolute; left: -24px; top: 11px;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: var(--paper); border: 3px solid var(--teal-mid);
+  }
+  .step.current::before { background: var(--teal-mid); }
+  .step .sd { font-family: var(--rounded); font-weight: 700; font-size: 1.2rem; }
+  .step .sdate { color: var(--ink-soft); font-size: 0.95rem; }
+  .muted { color: var(--ink-soft); }
+
+  /* ---------- forms ---------- */
+  .form h1 { font-size: 1.8rem; margin: 4px 0 18px; }
+  label { display: block; font-weight: 600; font-size: 0.95rem; margin: 0 0 6px; }
+  .f { margin-bottom: 16px; }
+  input[type=text], input[type=date] {
+    width: 100%; font: inherit; font-size: 1.1rem; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 13px 14px; min-height: 50px; -webkit-appearance: none; appearance: none;
+  }
+  .hint { font-size: 0.85rem; color: var(--ink-soft); margin-top: 6px; }
+
+  /* ---------- help ---------- */
+  .help h1 { font-size: 1.8rem; margin: 4px 0 8px; }
+  .help h2 { margin-top: 24px; }
+  .help ol { padding-left: 22px; margin: 0; }
+  .help li { margin-bottom: 10px; font-size: 1.1rem; }
+  .help p { margin: 0 0 12px; }
+
+  /* ---------- sheets ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(10, 20, 24, 0.45);
+    display: none; align-items: flex-end; justify-content: center; z-index: 10;
+  }
+  .overlay.active { display: flex; }
+  .sheet {
+    background: var(--card); width: 100%; max-width: 540px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+  .sheet p { margin: 0 0 16px; font-size: 1.1rem; }
+  .sheet .title { font-weight: 700; font-size: 1.2rem; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= LIST ================= -->
+  <section class="screen active" id="s-list">
+    <div class="topbar">
+      <h1>My Medications</h1>
+      <button class="round-btn" id="add-btn" aria-label="Add medication">+</button>
+    </div>
+
+    <div class="notice" id="install-notice" hidden>
+      <strong>Add this to your Home Screen</strong>
+      Tap the Share button, then Add to Home Screen. Open it from that icon and enter your medications there, since Safari keeps its own separate copy.
+    </div>
+
+    <div class="list" id="list"></div>
+
+    <div class="empty" id="empty" hidden>
+      <p>No medications yet.</p>
+      <button class="btn primary" id="empty-add">Add a medication</button>
+      <div class="row"><button class="btn plain" id="empty-restore">Restore from backup</button></div>
+    </div>
+
+    <div class="backup" id="backup-box">
+      <div class="status" id="backup-status"></div>
+      <button class="btn primary" id="backup-btn">Back Up Now</button>
+      <button class="how" id="help-btn">How to back up &rsaquo;</button>
+    </div>
+  </section>
+
+  <!-- ================= DETAIL ================= -->
+  <section class="screen" id="s-detail">
+    <button class="back" data-go="list">&lsaquo; All medications</button>
+    <div class="d-name" id="d-name"></div>
+    <div class="d-dose" id="d-dose"></div>
+
+    <div class="fields">
+      <div class="field"><div class="k">Purpose</div><div class="v" id="d-purpose"></div></div>
+      <div class="field"><div class="k">Frequency</div><div class="v" id="d-frequency"></div></div>
+      <div class="field"><div class="k">Started</div><div class="v" id="d-started"></div></div>
+      <div class="field"><div class="k">Prescribing doctor</div><div class="v" id="d-doctor"></div></div>
+      <div class="field"><div class="k">Pharmacy</div><div class="v" id="d-pharmacy"></div></div>
+    </div>
+
+    <h2>Dosage history</h2>
+    <div id="d-history"></div>
+
+    <div class="row">
+      <button class="btn primary" id="dose-btn">Update dosage</button>
+      <button class="btn plain" id="edit-btn">Edit details</button>
+    </div>
+    <div class="row"><button class="btn danger" id="delete-btn">Delete medication</button></div>
+  </section>
+
+  <!-- ================= ADD / EDIT ================= -->
+  <section class="screen form" id="s-edit">
+    <button class="back" id="edit-cancel">&lsaquo; Cancel</button>
+    <h1 id="edit-title">Add medication</h1>
+    <form id="edit-form" novalidate>
+      <div class="f"><label for="f-name">Medication name</label><input type="text" id="f-name" autocomplete="off" autocapitalize="words"></div>
+      <div class="f"><label for="f-dose">Current dosage</label><input type="text" id="f-dose" placeholder="e.g. 10 mg" autocomplete="off"></div>
+      <div class="f"><label for="f-purpose">Purpose</label><input type="text" id="f-purpose" placeholder="e.g. Blood pressure" autocomplete="off"></div>
+      <div class="f"><label for="f-frequency">Frequency</label><input type="text" id="f-frequency" placeholder="e.g. Once daily" autocomplete="off"></div>
+      <div class="f"><label for="f-started">Date started</label><input type="date" id="f-started"></div>
+      <div class="f"><label for="f-doctor">Prescribing doctor</label><input type="text" id="f-doctor" autocomplete="off" autocapitalize="words"></div>
+      <div class="f"><label for="f-pharmacy">Pharmacy</label><input type="text" id="f-pharmacy" autocomplete="off" autocapitalize="words"></div>
+      <div class="hint" id="edit-error" style="color:var(--danger);display:none;margin-bottom:12px;"></div>
+      <button type="submit" class="btn primary">Save medication</button>
+    </form>
+  </section>
+
+  <!-- ================= UPDATE DOSAGE ================= -->
+  <section class="screen form" id="s-dose">
+    <button class="back" id="dose-cancel">&lsaquo; Cancel</button>
+    <h1>Update dosage</h1>
+    <p class="muted" id="dose-current" style="margin-top:-8px;margin-bottom:18px;"></p>
+    <form id="dose-form" novalidate>
+      <div class="f"><label for="n-dose">New dosage</label><input type="text" id="n-dose" placeholder="e.g. 20 mg" autocomplete="off"></div>
+      <div class="f">
+        <label for="n-date">Date of change</label><input type="date" id="n-date">
+        <div class="hint">The old dosage stays in the history.</div>
+      </div>
+      <button type="submit" class="btn primary">Save new dosage</button>
+    </form>
+  </section>
+
+  <!-- ================= HOW TO BACK UP ================= -->
+  <section class="screen help" id="s-help">
+    <button class="back" data-go="list">&lsaquo; All medications</button>
+    <h1>Backing up</h1>
+    <p class="muted">A backup is a small file with your whole list. If this app is ever cleared or you get a new phone, the file brings everything back.</p>
+
+    <h2>To back up</h2>
+    <ol>
+      <li>Tap <strong>Back Up Now</strong>.</li>
+      <li>When the share menu appears, tap <strong>Save to Files</strong>.</li>
+      <li>Choose <strong>iCloud Drive</strong> and tap <strong>Save</strong>. iCloud keeps it safe even if you lose or replace your phone.</li>
+    </ol>
+    <div class="row"><button class="btn primary" id="help-backup">Back Up Now</button></div>
+
+    <h2>To restore</h2>
+    <ol>
+      <li>Tap <strong>Restore from Backup</strong> below.</li>
+      <li>Pick your most recent backup file. Each one is named with its date, like <em>medications-backup-2026-09-27</em>.</li>
+      <li>Confirm that you want to replace your current list.</li>
+    </ol>
+    <div class="row"><button class="btn plain" id="help-restore">Restore from Backup</button></div>
+
+    <h2>If the app itself is gone</h2>
+    <p>Open the app's web address in Safari once with a connection, add it to your Home Screen again, then restore your backup as above. Restoring works with no connection.</p>
+  </section>
+
+</div>
+
+<input type="file" id="restore-input" accept=".json,application/json,text/plain" hidden>
+
+<!-- confirm sheet -->
+<div class="overlay" id="confirm">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="title" id="confirm-title"></div>
+    <p id="confirm-text"></p>
+    <div class="row">
+      <button class="btn plain" id="confirm-no">Cancel</button>
+      <button class="btn primary" id="confirm-yes"></button>
+    </div>
+  </div>
+</div>
+
+<!-- backup nudge -->
+<div class="overlay" id="nudge">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="nudge-title">
+    <div class="title" id="nudge-title">Back up your changes?</div>
+    <p>Your latest change is only saved on this phone until you back up.</p>
+    <div class="row">
+      <button class="btn plain" id="nudge-no">Not now</button>
+      <button class="btn primary" id="nudge-yes">Back Up Now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var KEY = "myMedications_v2";
+  var state = { meds: [], lastBackup: null, lastChange: null };
+  var activeId = null;
+  var editingId = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------- storage ----------
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var d = JSON.parse(raw);
+        if (d && Array.isArray(d.meds)) {
+          state.meds = d.meds;
+          state.lastBackup = d.lastBackup || null;
+          state.lastChange = d.lastChange || null;
+        }
+      }
+    } catch (e) { console.error("Load failed", e); }
+  }
+  function save(changed) {
+    if (changed) state.lastChange = new Date().toISOString();
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+    } catch (e) {
+      alert("This change couldn't be saved on the phone. Check that storage isn't full.");
+    }
+  }
+  // Ask iOS to keep this app's storage rather than clearing it when space is low.
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+
+  // ---------- helpers ----------
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function todayISO() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function fmtDate(iso) {
+    if (!iso) return "";
+    var p = String(iso).slice(0, 10).split("-");
+    if (p.length !== 3) return iso;
+    return MONTHS[parseInt(p[1], 10) - 1] + " " + parseInt(p[2], 10) + ", " + p[0];
+  }
+  function getMed(id) {
+    for (var i = 0; i < state.meds.length; i++) if (state.meds[i].id === id) return state.meds[i];
+    return null;
+  }
+  function setVal(el, value) {
+    el.textContent = value || "Not set";
+    el.classList.toggle("unset", !value);
+  }
+
+  // ---------- navigation ----------
+  function show(name) {
+    ["list", "detail", "edit", "dose", "help"].forEach(function (n) {
+      $("s-" + n).classList.toggle("active", n === name);
+    });
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll("[data-go]").forEach(function (b) {
+    b.addEventListener("click", function () { renderList(); show(b.getAttribute("data-go")); });
+  });
+
+  // ---------- list ----------
+  function renderList() {
+    var list = $("list");
+    list.innerHTML = "";
+    state.meds.forEach(function (m) {
+      var b = document.createElement("button");
+      b.className = "med";
+      b.innerHTML = '<div class="text"><div class="name"></div><div class="dose"></div></div><span class="chev" aria-hidden="true">&rsaquo;</span>';
+      b.querySelector(".name").textContent = m.name;
+      b.querySelector(".dose").textContent = m.dose;
+      b.addEventListener("click", function () { openDetail(m.id); });
+      list.appendChild(b);
+    });
+    $("empty").hidden = state.meds.length > 0;
+    renderBackupStatus();
+  }
+
+  function renderBackupStatus() {
+    var box = $("backup-box"), st = $("backup-status");
+    if (!state.lastBackup) {
+      box.classList.add("stale");
+      st.textContent = state.meds.length ? "Not backed up yet" : "Nothing to back up yet";
+    } else if (state.lastChange && state.lastChange > state.lastBackup) {
+      box.classList.add("stale");
+      st.textContent = "Changes not backed up. Last backup " + fmtDate(state.lastBackup);
+    } else {
+      box.classList.remove("stale");
+      st.textContent = "Last backed up: " + fmtDate(state.lastBackup);
+    }
+  }
+
+  // ---------- detail ----------
+  function openDetail(id) {
+    var m = getMed(id);
+    if (!m) { renderList(); show("list"); return; }
+    activeId = id;
+    $("d-name").textContent = m.name;
+    $("d-dose").textContent = m.dose;
+    setVal($("d-purpose"), m.purpose);
+    setVal($("d-frequency"), m.frequency);
+    setVal($("d-started"), fmtDate(m.started));
+    setVal($("d-doctor"), m.doctor);
+    setVal($("d-pharmacy"), m.pharmacy);
+
+    var h = $("d-history");
+    h.innerHTML = "";
+    var steps = (m.history || []).slice();
+    if (!steps.length) {
+      var p = document.createElement("p");
+      p.className = "muted";
+      p.textContent = "No dosage changes yet. Current dosage: " + m.dose + ".";
+      h.appendChild(p);
+    } else {
+      var tl = document.createElement("div");
+      tl.className = "timeline";
+      steps.forEach(function (s, i) {
+        var d = document.createElement("div");
+        d.className = "step" + (i === steps.length - 1 ? " current" : "");
+        d.innerHTML = '<div class="sd"></div><div class="sdate"></div>';
+        d.querySelector(".sd").textContent = s.dose;
+        d.querySelector(".sdate").textContent =
+          (s.date ? (i === 0 ? "From " : "Changed ") + fmtDate(s.date) : "Starting dosage") +
+          (i === steps.length - 1 ? " (current)" : "");
+        tl.appendChild(d);
+      });
+      h.appendChild(tl);
+    }
+    show("detail");
+  }
+
+  // ---------- add / edit ----------
+  var F = ["name", "dose", "purpose", "frequency", "started", "doctor", "pharmacy"];
+  function openEdit(id) {
+    editingId = id;
+    var m = id ? getMed(id) : null;
+    $("edit-title").textContent = m ? "Edit " + m.name : "Add medication";
+    F.forEach(function (k) { $("f-" + k).value = m ? (m[k] || "") : ""; });
+    $("edit-error").style.display = "none";
+    show("edit");
+  }
+  $("add-btn").addEventListener("click", function () { openEdit(null); });
+  $("empty-add").addEventListener("click", function () { openEdit(null); });
+  $("edit-btn").addEventListener("click", function () { openEdit(activeId); });
+  $("edit-cancel").addEventListener("click", function () {
+    if (editingId && getMed(editingId)) openDetail(editingId); else { renderList(); show("list"); }
+  });
+
+  $("edit-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var v = {};
+    F.forEach(function (k) { v[k] = $("f-" + k).value.trim(); });
+    if (!v.name || !v.dose) {
+      $("edit-error").textContent = "Enter a medication name and current dosage to save.";
+      $("edit-error").style.display = "block";
+      return;
+    }
+    var m;
+    if (editingId && (m = getMed(editingId))) {
+      F.forEach(function (k) { m[k] = v[k]; });
+      // keep the first history entry's date in step with the start date
+      if (m.history && m.history.length) m.history[0].date = m.history[0].date || m.started;
+    } else {
+      m = { id: uid(), history: [] };
+      F.forEach(function (k) { m[k] = v[k]; });
+      state.meds.push(m);
+    }
+    save(true);
+    openDetail(m.id);
+    nudge();
+  });
+
+  // ---------- update dosage ----------
+  $("dose-btn").addEventListener("click", function () {
+    var m = getMed(activeId); if (!m) return;
+    $("dose-current").textContent = "Current: " + m.dose;
+    $("n-dose").value = "";
+    $("n-date").value = todayISO();
+    show("dose");
+  });
+  $("dose-cancel").addEventListener("click", function () { openDetail(activeId); });
+  $("dose-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var m = getMed(activeId); if (!m) return;
+    var nd = $("n-dose").value.trim();
+    if (!nd) { $("n-dose").focus(); return; }
+    if (!m.history || !m.history.length) m.history = [{ dose: m.dose, date: m.started || "" }];
+    m.history.push({ dose: nd, date: $("n-date").value || todayISO() });
+    m.dose = nd;
+    save(true);
+    openDetail(m.id);
+    nudge();
+  });
+
+  // ---------- delete ----------
+  $("delete-btn").addEventListener("click", function () {
+    var m = getMed(activeId); if (!m) return;
+    confirmSheet("Delete " + m.name + "?", "Its details and dosage history will be removed from this phone.", "Delete", function () {
+      state.meds = state.meds.filter(function (x) { return x.id !== activeId; });
+      save(true);
+      renderList(); show("list");
+      nudge();
+    });
+  });
+
+  // ---------- sheets ----------
+  var confirmAction = null;
+  function confirmSheet(title, text, yesLabel, onYes) {
+    $("confirm-title").textContent = title;
+    $("confirm-text").textContent = text;
+    $("confirm-yes").textContent = yesLabel;
+    confirmAction = onYes;
+    $("confirm").classList.add("active");
+  }
+  $("confirm-no").addEventListener("click", function () { $("confirm").classList.remove("active"); });
+  $("confirm-yes").addEventListener("click", function () {
+    $("confirm").classList.remove("active");
+    if (confirmAction) confirmAction();
+  });
+
+  function nudge() { $("nudge").classList.add("active"); }
+  $("nudge-no").addEventListener("click", function () { $("nudge").classList.remove("active"); });
+  $("nudge-yes").addEventListener("click", function () {
+    $("nudge").classList.remove("active");
+    backup();
+  });
+
+  // ---------- backup ----------
+  function markBackedUp() {
+    state.lastBackup = new Date().toISOString();
+    if (!state.lastChange || state.lastChange > state.lastBackup) state.lastChange = state.lastBackup;
+    save(false);
+    renderBackupStatus();
+  }
+  function backup() {
+    if (!state.meds.length) { alert("Add a medication first, then back up."); return; }
+    var name = "medications-backup-" + todayISO() + ".json";
+    var data = JSON.stringify({
+      app: "my-medications", version: 1,
+      exportedAt: new Date().toISOString(),
+      meds: state.meds
+    }, null, 2);
+    var file;
+    try { file = new File([data], name, { type: "application/json" }); } catch (e) { file = null; }
+
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: name })
+        .then(markBackedUp)
+        .catch(function (err) {
+          if (err && err.name === "AbortError") return; // closed the share menu
+          download(data, name);
+        });
+    } else {
+      download(data, name);
+    }
+  }
+  function download(data, name) {
+    var url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+    var a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    markBackedUp();
+  }
+  $("backup-btn").addEventListener("click", backup);
+  $("help-backup").addEventListener("click", backup);
+  $("help-btn").addEventListener("click", function () { show("help"); });
+
+  // ---------- restore ----------
+  function startRestore() { $("restore-input").value = ""; $("restore-input").click(); }
+  $("help-restore").addEventListener("click", startRestore);
+  $("empty-restore").addEventListener("click", startRestore);
+  $("restore-input").addEventListener("change", function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var d;
+      try { d = JSON.parse(reader.result); } catch (e) { d = null; }
+      var ok = d && Array.isArray(d.meds) && d.meds.every(function (m) { return m && typeof m.name === "string"; });
+      if (!ok) {
+        alert("That file isn't a medication backup. Pick a file named like medications-backup-2026-09-27.");
+        return;
+      }
+      var meds = d.meds.map(function (m) {
+        return {
+          id: m.id || uid(), name: m.name, dose: m.dose || "",
+          purpose: m.purpose || "", frequency: m.frequency || "", started: m.started || "",
+          doctor: m.doctor || "", pharmacy: m.pharmacy || "",
+          history: Array.isArray(m.history) ? m.history : []
+        };
+      });
+      var when = d.exportedAt ? " from " + fmtDate(d.exportedAt) : "";
+      var text = "The backup" + when + " has " + meds.length + " medication" + (meds.length === 1 ? "" : "s") + ".";
+      if (state.meds.length) text += " It will replace the " + state.meds.length + " currently on this phone.";
+      confirmSheet("Restore this backup?", text, "Restore", function () {
+        state.meds = meds;
+        state.lastBackup = new Date().toISOString();
+        state.lastChange = state.lastBackup;
+        save(false);
+        renderList(); show("list");
+      });
+    };
+    reader.readAsText(f);
+  });
+
+  // ---------- install notice ----------
+  var standalone = window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  $("install-notice").hidden = standalone;
+
+  // ---------- offline copy ----------
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function (e) { console.error("Offline setup failed", e); });
+    });
+  }
+
+  load();
+  renderList();
+  show("list");
+})();
+</script>
+</body>
+</html>
