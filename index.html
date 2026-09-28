@@ -161,6 +161,21 @@
     padding: 13px 14px; min-height: 50px; -webkit-appearance: none; appearance: none;
   }
   .hint { font-size: 0.85rem; color: var(--ink-soft); margin-top: 6px; }
+  textarea {
+    width: 100%; font: inherit; font-size: 1.1rem; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 13px 14px; min-height: 130px; resize: vertical; -webkit-appearance: none; appearance: none;
+  }
+  .notes-box {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; font-size: 1.1rem; white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .notes-box.unset { color: var(--ink-soft); font-style: italic; }
+  .backup .file { font-size: 0.9rem; margin: -6px 0 12px; opacity: 0.85; overflow-wrap: anywhere; }
+  .loc { font-weight: 700; }
+  .loc-row { display: flex; gap: 10px; }
+  .loc-row input { flex: 1; }
+  .loc-row .btn { width: auto; padding: 0 18px; }
 
   /* ---------- help ---------- */
   .help h1 { font-size: 1.8rem; margin: 4px 0 8px; }
@@ -209,6 +224,7 @@
 
     <div class="backup" id="backup-box">
       <div class="status" id="backup-status"></div>
+      <div class="file" id="backup-file" hidden></div>
       <button class="btn primary" id="backup-btn">Back Up Now</button>
       <button class="how" id="help-btn">How to back up &rsaquo;</button>
     </div>
@@ -227,6 +243,9 @@
       <div class="field"><div class="k">Prescribing doctor</div><div class="v" id="d-doctor"></div></div>
       <div class="field"><div class="k">Pharmacy</div><div class="v" id="d-pharmacy"></div></div>
     </div>
+
+    <h2>Notes</h2>
+    <div class="notes-box" id="d-notes"></div>
 
     <h2>Dosage history</h2>
     <div id="d-history"></div>
@@ -250,6 +269,7 @@
       <div class="f"><label for="f-started">Date started</label><input type="date" id="f-started"></div>
       <div class="f"><label for="f-doctor">Prescribing doctor</label><input type="text" id="f-doctor" autocomplete="off" autocapitalize="words"></div>
       <div class="f"><label for="f-pharmacy">Pharmacy</label><input type="text" id="f-pharmacy" autocomplete="off" autocapitalize="words"></div>
+      <div class="f"><label for="f-notes">Notes</label><textarea id="f-notes" placeholder="e.g. Take with food. Refill every 90 days."></textarea></div>
       <div class="hint" id="edit-error" style="color:var(--danger);display:none;margin-bottom:12px;"></div>
       <button type="submit" class="btn primary">Save medication</button>
     </form>
@@ -276,18 +296,26 @@
     <h1>Backing up</h1>
     <p class="muted">A backup is a small file with your whole list. If this app is ever cleared or you get a new phone, the file brings everything back.</p>
 
+    <h2>Where I save backups</h2>
+    <div class="loc-row">
+      <input type="text" id="loc-input" aria-label="Where I save backups" autocomplete="off">
+      <button class="btn plain" id="loc-save">Save</button>
+    </div>
+    <div class="hint" id="loc-hint">The directions below use this location.</div>
+
     <h2>To back up</h2>
     <ol>
       <li>Tap <strong>Back Up Now</strong>.</li>
       <li>When the share menu appears, tap <strong>Save to Files</strong>.</li>
-      <li>Choose <strong>iCloud Drive</strong> and tap <strong>Save</strong>. iCloud keeps it safe even if you lose or replace your phone.</li>
+      <li>Go to <span class="loc"></span> and tap <strong>Save</strong>.</li>
     </ol>
     <div class="row"><button class="btn primary" id="help-backup">Back Up Now</button></div>
 
     <h2>To restore</h2>
     <ol>
       <li>Tap <strong>Restore from Backup</strong> below.</li>
-      <li>Pick your most recent backup file. Each one is named with its date, like <em>medications-backup-2026-09-27</em>.</li>
+      <li>In the file picker, go to <span class="loc"></span>.</li>
+      <li>Pick the newest file<span id="restore-file"></span>. Each one is named with its date.</li>
       <li>Confirm that you want to replace your current list.</li>
     </ol>
     <div class="row"><button class="btn plain" id="help-restore">Restore from Backup</button></div>
@@ -329,7 +357,8 @@
   "use strict";
 
   var KEY = "myMedications_v2";
-  var state = { meds: [], lastBackup: null, lastChange: null };
+  var DEFAULT_LOC = "iCloud Drive \u2192 Medicine";
+  var state = { meds: [], lastBackup: null, lastChange: null, lastBackupName: null, backupLocation: DEFAULT_LOC };
   var activeId = null;
   var editingId = null;
 
@@ -345,6 +374,8 @@
           state.meds = d.meds;
           state.lastBackup = d.lastBackup || null;
           state.lastChange = d.lastChange || null;
+          state.lastBackupName = d.lastBackupName || null;
+          state.backupLocation = d.backupLocation || DEFAULT_LOC;
         }
       }
     } catch (e) { console.error("Load failed", e); }
@@ -420,8 +451,17 @@
       st.textContent = "Changes not backed up. Last backup " + fmtDate(state.lastBackup);
     } else {
       box.classList.remove("stale");
-      st.textContent = "Last backed up: " + fmtDate(state.lastBackup);
+      st.textContent = "Last backed up " + fmtDate(state.lastBackup) + " to " + state.backupLocation;
     }
+    var fl = $("backup-file");
+    fl.hidden = !(state.lastBackup && state.lastBackupName);
+    if (state.lastBackupName) fl.textContent = "File: " + state.lastBackupName;
+    renderLocation();
+  }
+
+  function renderLocation() {
+    document.querySelectorAll(".loc").forEach(function (el) { el.textContent = state.backupLocation; });
+    $("restore-file").textContent = state.lastBackupName ? " (your last one was " + state.lastBackupName + ")" : "";
   }
 
   // ---------- detail ----------
@@ -436,6 +476,9 @@
     setVal($("d-started"), fmtDate(m.started));
     setVal($("d-doctor"), m.doctor);
     setVal($("d-pharmacy"), m.pharmacy);
+    var nb = $("d-notes");
+    nb.textContent = m.notes || "No notes yet. Add them with Edit details.";
+    nb.classList.toggle("unset", !m.notes);
 
     var h = $("d-history");
     h.innerHTML = "";
@@ -464,7 +507,7 @@
   }
 
   // ---------- add / edit ----------
-  var F = ["name", "dose", "purpose", "frequency", "started", "doctor", "pharmacy"];
+  var F = ["name", "dose", "purpose", "frequency", "started", "doctor", "pharmacy", "notes"];
   function openEdit(id) {
     editingId = id;
     var m = id ? getMed(id) : null;
@@ -560,8 +603,9 @@
   });
 
   // ---------- backup ----------
-  function markBackedUp() {
+  function markBackedUp(name) {
     state.lastBackup = new Date().toISOString();
+    if (name) state.lastBackupName = name;
     if (!state.lastChange || state.lastChange > state.lastBackup) state.lastChange = state.lastBackup;
     save(false);
     renderBackupStatus();
@@ -579,7 +623,7 @@
 
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
       navigator.share({ files: [file], title: name })
-        .then(markBackedUp)
+        .then(function () { markBackedUp(name); })
         .catch(function (err) {
           if (err && err.name === "AbortError") return; // closed the share menu
           download(data, name);
@@ -594,11 +638,24 @@
     a.href = url; a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-    markBackedUp();
+    markBackedUp(name);
   }
   $("backup-btn").addEventListener("click", backup);
   $("help-backup").addEventListener("click", backup);
-  $("help-btn").addEventListener("click", function () { show("help"); });
+  $("help-btn").addEventListener("click", function () {
+    $("loc-input").value = state.backupLocation;
+    $("loc-hint").textContent = "The directions below use this location.";
+    renderLocation();
+    show("help");
+  });
+  $("loc-save").addEventListener("click", function () {
+    var v = $("loc-input").value.trim();
+    state.backupLocation = v || DEFAULT_LOC;
+    $("loc-input").value = state.backupLocation;
+    save(false);
+    renderBackupStatus();
+    $("loc-hint").textContent = "Saved. Directions now point to " + state.backupLocation + ".";
+  });
 
   // ---------- restore ----------
   function startRestore() { $("restore-input").value = ""; $("restore-input").click(); }
@@ -620,7 +677,7 @@
         return {
           id: m.id || uid(), name: m.name, dose: m.dose || "",
           purpose: m.purpose || "", frequency: m.frequency || "", started: m.started || "",
-          doctor: m.doctor || "", pharmacy: m.pharmacy || "",
+          doctor: m.doctor || "", pharmacy: m.pharmacy || "", notes: m.notes || "",
           history: Array.isArray(m.history) ? m.history : []
         };
       });
@@ -631,6 +688,7 @@
         state.meds = meds;
         state.lastBackup = new Date().toISOString();
         state.lastChange = state.lastBackup;
+        state.lastBackupName = f.name.replace(/\.json$/i, "") + ".json";
         save(false);
         renderList(); show("list");
       });

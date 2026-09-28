@@ -1,5 +1,5 @@
 // Saves a full copy of the app on the phone so it opens with no connection.
-const CACHE = "meds-v1";
+const CACHE = "meds-v2";
 const FILES = ["./", "./index.html", "./manifest.json", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (event) => {
