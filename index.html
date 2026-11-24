@@ -197,6 +197,79 @@
   }
   .sheet p { margin: 0 0 16px; font-size: 1.1rem; }
   .sheet .title { font-weight: 700; font-size: 1.2rem; margin-bottom: 6px; }
+
+  /* ---------- tab bar ---------- */
+  body.has-tabs .wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
+    display: none; justify-content: center;
+    background: var(--card); border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body.has-tabs .tabbar { display: flex; }
+  .tabbar .inner { display: flex; width: 100%; max-width: 540px; }
+  .tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 9px 4px 8px; font-size: 0.78rem; font-weight: 600; color: var(--ink-soft);
+  }
+  .tab svg { width: 26px; height: 26px; }
+  .tab.active { color: var(--teal-mid); }
+
+  /* ---------- blood pressure ---------- */
+  .bp-summary { display: flex; gap: 10px; margin-bottom: 12px; }
+  .bp-tile {
+    flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+  }
+  .bp-tile .k { font-size: 0.85rem; color: var(--ink-soft); }
+  .bp-tile .big { font-family: var(--rounded); font-size: 1.7rem; font-weight: 700; line-height: 1.15; }
+  .bp-tile .small { font-size: 0.85rem; color: var(--ink-soft); }
+  .chart-box { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 10px 6px; margin-bottom: 8px; }
+  .chart-box svg { display: block; width: 100%; height: auto; }
+  .chart-legend { display: flex; gap: 16px; font-size: 0.85rem; color: var(--ink-soft); padding: 4px 6px 6px; }
+  .chart-legend span::before { content: ""; display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; background: currentColor; }
+  .chart-legend .sys { color: var(--teal-mid); }
+  .chart-legend .dia { color: #B0763A; }
+  .day-head { font-weight: 700; font-size: 1rem; margin: 20px 0 8px; color: var(--ink-soft); }
+  .reading {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+  }
+  .reading .nums { font-family: var(--rounded); font-size: 1.45rem; font-weight: 700; }
+  .reading .nums small { font-size: 0.9rem; font-weight: 600; color: var(--ink-soft); margin-left: 6px; }
+  .reading .meta { flex: 1; min-width: 0; font-size: 0.9rem; color: var(--ink-soft); overflow-wrap: anywhere; }
+  .pill { font-size: 0.78rem; font-weight: 700; padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+  .pill.c0 { background: #DDF1E4; color: #1D5B33; }
+  .pill.c1 { background: #FFF3DC; color: #7E4C00; }
+  .pill.c2 { background: #FFE2CC; color: #8A3D00; }
+  .pill.c3 { background: #FADAD6; color: #8E2A20; }
+  .pill.c4 { background: #A83A30; color: #FFFFFF; }
+  @media (prefers-color-scheme: dark) {
+    .pill.c0 { background: #18402A; color: #A9E2BE; }
+    .pill.c1 { background: #3D2E10; color: #F2C77A; }
+    .pill.c2 { background: #4A2A10; color: #F5B07E; }
+    .pill.c3 { background: #4A1E1A; color: #F2A79F; }
+    .pill.c4 { background: #E8847A; color: #1A0B09; }
+  }
+  .two { display: flex; gap: 10px; }
+  .two .f { flex: 1; min-width: 0; }
+  input[type=number], input[type=time], input[type=tel] {
+    width: 100%; font: inherit; font-size: 1.1rem; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 13px 14px; min-height: 50px; -webkit-appearance: none; appearance: none;
+  }
+  input[type=number] { font-family: var(--rounded); font-size: 1.5rem; font-weight: 700; }
+
+  /* ---------- doctors ---------- */
+  .doc {
+    background: var(--card); border: 1px solid var(--line); border-left: 8px solid var(--teal-mid);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .doc .dn { font-size: 1.3rem; font-weight: 700; overflow-wrap: anywhere; }
+  .doc .dt { color: var(--teal-mid); font-weight: 600; margin-bottom: 8px; }
+  .doc a { color: var(--teal-mid); font-weight: 600; text-decoration: none; }
+  .doc .line { margin-top: 6px; overflow-wrap: anywhere; }
+  .doc .addr { white-space: pre-wrap; }
+  .doc .edit-link { display: block; margin-top: 10px; color: var(--ink-soft); font-weight: 600; font-size: 0.95rem; padding: 4px 0; }
 </style>
 </head>
 <body>
@@ -221,14 +294,79 @@
       <button class="btn primary" id="empty-add">Add a medication</button>
       <div class="row"><button class="btn plain" id="empty-restore">Restore from backup</button></div>
     </div>
+  </section>
 
-    <div class="backup" id="backup-box">
-      <div class="status" id="backup-status"></div>
-      <div class="file" id="backup-file" hidden></div>
-      <button class="btn primary" id="backup-btn">Back Up Now</button>
-      <button class="how" id="help-btn">How to back up &rsaquo;</button>
+  <!-- ================= BLOOD PRESSURE ================= -->
+  <section class="screen" id="s-bp">
+    <div class="topbar">
+      <h1>Blood Pressure</h1>
+      <button class="round-btn" id="bp-add" aria-label="Log a reading">+</button>
+    </div>
+    <div id="bp-top"></div>
+    <div id="bp-list"></div>
+    <div class="empty" id="bp-empty" hidden>
+      <p>No readings yet.</p>
+      <button class="btn primary" id="bp-empty-add">Log a reading</button>
+    </div>
+    <div class="row" id="bp-share-row" hidden><button class="btn plain" id="bp-share">Share blood pressure log</button></div>
+  </section>
+
+  <!-- ================= BP ADD / EDIT ================= -->
+  <section class="screen form" id="s-bpedit">
+    <button class="back" id="bpe-cancel">&lsaquo; Cancel</button>
+    <h1 id="bpe-title">Log a reading</h1>
+    <form id="bp-form" novalidate>
+      <div class="two">
+        <div class="f"><label for="b-sys">Top number (systolic)</label><input type="number" id="b-sys" inputmode="numeric" min="50" max="260" placeholder="120"></div>
+        <div class="f"><label for="b-dia">Bottom number (diastolic)</label><input type="number" id="b-dia" inputmode="numeric" min="30" max="180" placeholder="80"></div>
+      </div>
+      <div class="f"><label for="b-pulse">Pulse (optional)</label><input type="number" id="b-pulse" inputmode="numeric" min="30" max="220" placeholder="70"></div>
+      <div class="two">
+        <div class="f"><label for="b-date">Date</label><input type="date" id="b-date"></div>
+        <div class="f"><label for="b-time">Time</label><input type="time" id="b-time"></div>
+      </div>
+      <div class="f"><label for="b-note">Note (optional)</label><input type="text" id="b-note" placeholder="e.g. Before meds, left arm" autocomplete="off"></div>
+      <div class="hint" id="bp-error" style="color:var(--danger);display:none;margin-bottom:12px;"></div>
+      <button type="submit" class="btn primary">Save reading</button>
+    </form>
+    <div class="row" id="bpe-del-row"><button class="btn danger" id="bpe-delete">Delete reading</button></div>
+  </section>
+
+  <!-- ================= DOCTORS ================= -->
+  <section class="screen" id="s-docs">
+    <div class="topbar">
+      <h1>My Doctors</h1>
+      <button class="round-btn" id="doc-add" aria-label="Add doctor">+</button>
+    </div>
+    <div class="list" id="doc-list"></div>
+    <div class="empty" id="doc-empty" hidden>
+      <p>No doctors yet.</p>
+      <button class="btn primary" id="doc-empty-add">Add a doctor</button>
     </div>
   </section>
+
+  <!-- ================= DOCTOR ADD / EDIT ================= -->
+  <section class="screen form" id="s-docedit">
+    <button class="back" id="doce-cancel">&lsaquo; Cancel</button>
+    <h1 id="doce-title">Add doctor</h1>
+    <form id="doc-form" novalidate>
+      <div class="f"><label for="g-name">Name</label><input type="text" id="g-name" placeholder="e.g. Dr. Jane Smith" autocomplete="off" autocapitalize="words"></div>
+      <div class="f"><label for="g-type">Type of doctor</label><input type="text" id="g-type" list="doc-types" placeholder="e.g. Cardiologist" autocomplete="off" autocapitalize="words"></div>
+      <div class="f"><label for="g-phone">Phone</label><input type="tel" id="g-phone" placeholder="e.g. 401-555-0123" autocomplete="off"></div>
+      <div class="f"><label for="g-address">Address</label><textarea id="g-address" style="min-height:90px" placeholder="Street, town, state, ZIP"></textarea></div>
+      <div class="hint" id="doc-error" style="color:var(--danger);display:none;margin-bottom:12px;"></div>
+      <button type="submit" class="btn primary">Save doctor</button>
+    </form>
+    <div class="row" id="doce-del-row"><button class="btn danger" id="doce-delete">Delete doctor</button></div>
+  </section>
+
+  <!-- shared backup box, shown on the three main tabs -->
+  <div class="backup" id="backup-box">
+    <div class="status" id="backup-status"></div>
+    <div class="file" id="backup-file" hidden></div>
+    <button class="btn primary" id="backup-btn">Back Up Now</button>
+    <button class="how" id="help-btn">How to back up &rsaquo;</button>
+  </div>
 
   <!-- ================= DETAIL ================= -->
   <section class="screen" id="s-detail">
@@ -267,7 +405,7 @@
       <div class="f"><label for="f-purpose">Purpose</label><input type="text" id="f-purpose" placeholder="e.g. Blood pressure" autocomplete="off"></div>
       <div class="f"><label for="f-frequency">Frequency</label><input type="text" id="f-frequency" placeholder="e.g. Once daily" autocomplete="off"></div>
       <div class="f"><label for="f-started">Date started</label><input type="date" id="f-started"></div>
-      <div class="f"><label for="f-doctor">Prescribing doctor</label><input type="text" id="f-doctor" autocomplete="off" autocapitalize="words"></div>
+      <div class="f"><label for="f-doctor">Prescribing doctor</label><input type="text" id="f-doctor" list="doc-names" autocomplete="off" autocapitalize="words"></div>
       <div class="f"><label for="f-pharmacy">Pharmacy</label><input type="text" id="f-pharmacy" autocomplete="off" autocapitalize="words"></div>
       <div class="f"><label for="f-notes">Notes</label><textarea id="f-notes" placeholder="e.g. Take with food. Refill every 90 days."></textarea></div>
       <div class="hint" id="edit-error" style="color:var(--danger);display:none;margin-bottom:12px;"></div>
@@ -292,9 +430,9 @@
 
   <!-- ================= HOW TO BACK UP ================= -->
   <section class="screen help" id="s-help">
-    <button class="back" data-go="list">&lsaquo; All medications</button>
+    <button class="back" id="help-back">&lsaquo; Back</button>
     <h1>Backing up</h1>
-    <p class="muted">A backup is a small file with your whole list. If this app is ever cleared or you get a new phone, the file brings everything back.</p>
+    <p class="muted">A backup is a small file with your medications, blood pressure readings and doctors. If this app is ever cleared or you get a new phone, the file brings everything back.</p>
 
     <h2>Where I save backups</h2>
     <div class="loc-row">
@@ -316,7 +454,7 @@
       <li>Tap <strong>Restore from Backup</strong> below.</li>
       <li>In the file picker, go to <span class="loc"></span>.</li>
       <li>Pick the newest file<span id="restore-file"></span>. Each one is named with its date.</li>
-      <li>Confirm that you want to replace your current list.</li>
+      <li>Confirm that you want to replace what's on this phone.</li>
     </ol>
     <div class="row"><button class="btn plain" id="help-restore">Restore from Backup</button></div>
 
@@ -325,6 +463,30 @@
   </section>
 
 </div>
+
+<datalist id="doc-names"></datalist>
+<datalist id="doc-types">
+  <option value="Primary care"><option value="Cardiologist"><option value="Dermatologist"><option value="Dentist">
+  <option value="Eye doctor"><option value="Gastroenterologist"><option value="Orthopedist"><option value="Urologist">
+  <option value="Endocrinologist"><option value="Neurologist"><option value="Pulmonologist"><option value="Physical therapist">
+</datalist>
+
+<nav class="tabbar" aria-label="Sections">
+  <div class="inner">
+    <button class="tab" data-tab="list">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-45 12 12)"/><line x1="9.2" y1="9.2" x2="14.8" y2="14.8"/></svg>
+      Medications
+    </button>
+    <button class="tab" data-tab="bp">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 5.6a5 5 0 0 0-7.6-.6L12 6.2l-1.2-1.2a5 5 0 0 0-7.1 7.1L12 20.5l8.3-8.4a5 5 0 0 0 .5-6.5z"/><polyline points="3 12 8 12 10 9 13 15 15 12 21 12"/></svg>
+      Blood Pressure
+    </button>
+    <button class="tab" data-tab="docs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a6 6 0 0 0 12 0V3"/><path d="M12 15v2a4 4 0 0 0 8 0v-3"/><circle cx="20" cy="12" r="2"/></svg>
+      Doctors
+    </button>
+  </div>
+</nav>
 
 <input type="file" id="restore-input" accept=".json,application/json,text/plain" hidden>
 
@@ -358,9 +520,10 @@
 
   var KEY = "myMedications_v2";
   var DEFAULT_LOC = "iCloud Drive \u2192 Medicine";
-  var state = { meds: [], lastBackup: null, lastChange: null, lastBackupName: null, backupLocation: DEFAULT_LOC };
+  var state = { meds: [], readings: [], doctors: [], lastBackup: null, lastChange: null, lastBackupName: null, backupLocation: DEFAULT_LOC };
   var activeId = null;
   var editingId = null;
+  var currentTab = "list";
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -372,6 +535,8 @@
         var d = JSON.parse(raw);
         if (d && Array.isArray(d.meds)) {
           state.meds = d.meds;
+          state.readings = Array.isArray(d.readings) ? d.readings : [];
+          state.doctors = Array.isArray(d.doctors) ? d.doctors : [];
           state.lastBackup = d.lastBackup || null;
           state.lastChange = d.lastChange || null;
           state.lastBackupName = d.lastBackupName || null;
@@ -400,7 +565,14 @@
   var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   function fmtDate(iso) {
     if (!iso) return "";
-    var p = String(iso).slice(0, 10).split("-");
+    var s = String(iso);
+    // A full timestamp (like a backup time) is stored in UTC; show it as the local day,
+    // so an evening backup doesn't read as tomorrow.
+    if (s.length > 10 && s.indexOf("T") === 10) {
+      var dt = new Date(s);
+      if (!isNaN(dt)) return MONTHS[dt.getMonth()] + " " + dt.getDate() + ", " + dt.getFullYear();
+    }
+    var p = s.slice(0, 10).split("-");
     if (p.length !== 3) return iso;
     return MONTHS[parseInt(p[1], 10) - 1] + " " + parseInt(p[2], 10) + ", " + p[0];
   }
@@ -414,12 +586,31 @@
   }
 
   // ---------- navigation ----------
+  var MAIN = ["list", "bp", "docs"];
   function show(name) {
-    ["list", "detail", "edit", "dose", "help"].forEach(function (n) {
+    ["list", "detail", "edit", "dose", "help", "bp", "bpedit", "docs", "docedit"].forEach(function (n) {
       $("s-" + n).classList.toggle("active", n === name);
+    });
+    var main = MAIN.indexOf(name) !== -1;
+    if (main) currentTab = name;
+    document.body.classList.toggle("has-tabs", main);
+    $("backup-box").style.display = main ? "" : "none";
+    document.querySelectorAll(".tab").forEach(function (t) {
+      var on = t.getAttribute("data-tab") === currentTab;
+      t.classList.toggle("active", on);
+      if (on) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current");
     });
     window.scrollTo(0, 0);
   }
+  function goTab(name) {
+    if (name === "bp") renderBP();
+    else if (name === "docs") renderDocs();
+    else renderList();
+    show(name);
+  }
+  document.querySelectorAll(".tab").forEach(function (t) {
+    t.addEventListener("click", function () { goTab(t.getAttribute("data-tab")); });
+  });
   document.querySelectorAll("[data-go]").forEach(function (b) {
     b.addEventListener("click", function () { renderList(); show(b.getAttribute("data-go")); });
   });
@@ -440,12 +631,13 @@
     $("empty").hidden = state.meds.length > 0;
     renderBackupStatus();
   }
+  function hasData() { return state.meds.length || state.readings.length || state.doctors.length; }
 
   function renderBackupStatus() {
     var box = $("backup-box"), st = $("backup-status");
     if (!state.lastBackup) {
       box.classList.add("stale");
-      st.textContent = state.meds.length ? "Not backed up yet" : "Nothing to back up yet";
+      st.textContent = hasData() ? "Not backed up yet" : "Nothing to back up yet";
     } else if (state.lastChange && state.lastChange > state.lastBackup) {
       box.classList.add("stale");
       st.textContent = "Changes not backed up. Last backup " + fmtDate(state.lastBackup);
@@ -514,6 +706,7 @@
     $("edit-title").textContent = m ? "Edit " + m.name : "Add medication";
     F.forEach(function (k) { $("f-" + k).value = m ? (m[k] || "") : ""; });
     $("edit-error").style.display = "none";
+    fillDocNames();
     show("edit");
   }
   $("add-btn").addEventListener("click", function () { openEdit(null); });
@@ -611,12 +804,14 @@
     renderBackupStatus();
   }
   function backup() {
-    if (!state.meds.length) { alert("Add a medication first, then back up."); return; }
+    if (!hasData()) { alert("Add something first, then back up."); return; }
     var name = "medications-backup-" + todayISO() + ".json";
     var data = JSON.stringify({
-      app: "my-medications", version: 1,
+      app: "my-medications", version: 2,
       exportedAt: new Date().toISOString(),
-      meds: state.meds
+      meds: state.meds,
+      readings: state.readings,
+      doctors: state.doctors
     }, null, 2);
     var file;
     try { file = new File([data], name, { type: "application/json" }); } catch (e) { file = null; }
@@ -642,6 +837,7 @@
   }
   $("backup-btn").addEventListener("click", backup);
   $("help-backup").addEventListener("click", backup);
+  $("help-back").addEventListener("click", function () { goTab(currentTab); });
   $("help-btn").addEventListener("click", function () {
     $("loc-input").value = state.backupLocation;
     $("loc-hint").textContent = "The directions below use this location.";
@@ -681,19 +877,299 @@
           history: Array.isArray(m.history) ? m.history : []
         };
       });
+      var hasR = Array.isArray(d.readings), hasD = Array.isArray(d.doctors);
+      var readings = hasR ? d.readings.filter(function (r) { return r && r.sys && r.dia && r.at; })
+        .map(function (r) { return { id: r.id || uid(), sys: +r.sys, dia: +r.dia, pulse: r.pulse ? +r.pulse : null, at: String(r.at), note: r.note || "" }; }) : null;
+      var doctors = hasD ? d.doctors.filter(function (x) { return x && typeof x.name === "string"; })
+        .map(function (x) { return { id: x.id || uid(), name: x.name, type: x.type || "", phone: x.phone || "", address: x.address || "" }; }) : null;
+      function n(c, w) { return c + " " + w + (c === 1 ? "" : "s"); }
       var when = d.exportedAt ? " from " + fmtDate(d.exportedAt) : "";
-      var text = "The backup" + when + " has " + meds.length + " medication" + (meds.length === 1 ? "" : "s") + ".";
-      if (state.meds.length) text += " It will replace the " + state.meds.length + " currently on this phone.";
+      var parts = [n(meds.length, "medication")];
+      if (hasR) parts.push(n(readings.length, "blood pressure reading"));
+      if (hasD) parts.push(n(doctors.length, "doctor"));
+      var text = "The backup" + when + " has " + parts.join(", ") + ". It will replace what's on this phone";
+      text += (hasR && hasD) ? "." : ", except your " + (!hasR && !hasD ? "readings and doctors" : !hasR ? "readings" : "doctors") + ", which this older backup doesn't include and will be kept.";
       confirmSheet("Restore this backup?", text, "Restore", function () {
         state.meds = meds;
+        if (hasR) state.readings = readings;
+        if (hasD) state.doctors = doctors;
         state.lastBackup = new Date().toISOString();
         state.lastChange = state.lastBackup;
         state.lastBackupName = f.name.replace(/\.json$/i, "") + ".json";
         save(false);
-        renderList(); show("list");
+        goTab(currentTab);
       });
     };
     reader.readAsText(f);
+  });
+
+  // ---------- blood pressure ----------
+  // Categories follow the American Heart Association chart.
+  var CATS = ["Normal", "Elevated", "Stage 1", "Stage 2", "Severe"];
+  function bpCat(s, d) {
+    if (s > 180 || d > 120) return 4;
+    if (s >= 140 || d >= 90) return 3;
+    if (s >= 130 || d >= 80) return 2;
+    if (s >= 120) return 1;
+    return 0;
+  }
+  function sortedReadings() {
+    return state.readings.slice().sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
+  }
+  function fmtTime(at) {
+    var p = String(at).slice(11, 16).split(":");
+    var h = parseInt(p[0], 10), m = p[1] || "00";
+    if (isNaN(h)) return "";
+    return (h % 12 || 12) + ":" + m + (h < 12 ? " AM" : " PM");
+  }
+  function localStamp(dt) {
+    return dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0") +
+      "T" + String(dt.getHours()).padStart(2, "0") + ":" + String(dt.getMinutes()).padStart(2, "0");
+  }
+  function pill(c) {
+    var s = document.createElement("span");
+    s.className = "pill c" + c; s.textContent = CATS[c];
+    return s;
+  }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function renderBP() {
+    var rs = sortedReadings();
+    var top = $("bp-top"), list = $("bp-list");
+    top.innerHTML = ""; list.innerHTML = "";
+    $("bp-empty").hidden = rs.length > 0;
+    $("bp-share-row").hidden = rs.length === 0;
+    renderBackupStatus();
+    if (!rs.length) return;
+
+    // summary tiles
+    var latest = rs[0];
+    var sum = el("div", "bp-summary");
+    var t1 = el("div", "bp-tile");
+    t1.appendChild(el("div", "k", "Latest"));
+    t1.appendChild(el("div", "big", latest.sys + "/" + latest.dia));
+    var s1 = el("div", "small", fmtDate(latest.at) + ", " + fmtTime(latest.at) + " ");
+    t1.appendChild(s1);
+    t1.appendChild(pill(bpCat(latest.sys, latest.dia)));
+    sum.appendChild(t1);
+
+    var cutoff = localStamp(new Date(Date.now() - 7 * 864e5));
+    var week = rs.filter(function (r) { return r.at >= cutoff; });
+    var t2 = el("div", "bp-tile");
+    t2.appendChild(el("div", "k", "7-day average"));
+    if (week.length) {
+      var as = Math.round(week.reduce(function (a, r) { return a + r.sys; }, 0) / week.length);
+      var ad = Math.round(week.reduce(function (a, r) { return a + r.dia; }, 0) / week.length);
+      t2.appendChild(el("div", "big", as + "/" + ad));
+      t2.appendChild(el("div", "small", week.length + " reading" + (week.length === 1 ? "" : "s") + " "));
+      t2.appendChild(pill(bpCat(as, ad)));
+    } else {
+      t2.appendChild(el("div", "big", "—"));
+      t2.appendChild(el("div", "small", "No readings this week"));
+    }
+    sum.appendChild(t2);
+    top.appendChild(sum);
+
+    // trend chart: last 30 readings, oldest on the left
+    var pts = rs.slice(0, 30).reverse();
+    if (pts.length >= 2) {
+      var W = 340, H = 160, L = 30, R = 8, T = 8, B = 20;
+      var lo = Math.min.apply(null, pts.map(function (r) { return r.dia; }).concat([70]));
+      var hi = Math.max.apply(null, pts.map(function (r) { return r.sys; }).concat([140]));
+      lo = Math.floor((lo - 5) / 10) * 10; hi = Math.ceil((hi + 5) / 10) * 10;
+      var x = function (i) { return L + (W - L - R) * (pts.length === 1 ? 0.5 : i / (pts.length - 1)); };
+      var y = function (v) { return T + (H - T - B) * (1 - (v - lo) / (hi - lo)); };
+      var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Blood pressure trend, last ' + pts.length + ' readings">';
+      for (var g = lo; g <= hi; g += (hi - lo > 80 ? 20 : 10)) {
+        svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(g) + '" y2="' + y(g) + '" stroke="var(--line)" stroke-width="1"/>';
+        svg += '<text x="' + (L - 5) + '" y="' + (y(g) + 4) + '" font-size="10" text-anchor="end" fill="var(--ink-soft)">' + g + '</text>';
+      }
+      [[120, "4 3"], [80, "4 3"]].forEach(function (ref) {
+        if (ref[0] > lo && ref[0] < hi) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(ref[0]) + '" y2="' + y(ref[0]) + '" stroke="var(--ink-soft)" stroke-dasharray="' + ref[1] + '" stroke-width="1" opacity="0.6"/>';
+      });
+      function line(key, color) {
+        var d = pts.map(function (r, i) { return (i ? "L" : "M") + x(i).toFixed(1) + " " + y(r[key]).toFixed(1); }).join(" ");
+        var s = '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+        pts.forEach(function (r, i) { s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r[key]).toFixed(1) + '" r="3" fill="' + color + '"/>'; });
+        return s;
+      }
+      svg += line("sys", "var(--teal-mid)") + line("dia", "#B0763A");
+      svg += '<text x="' + L + '" y="' + (H - 4) + '" font-size="10" fill="var(--ink-soft)">' + fmtDate(pts[0].at) + '</text>';
+      svg += '<text x="' + (W - R) + '" y="' + (H - 4) + '" font-size="10" text-anchor="end" fill="var(--ink-soft)">' + fmtDate(pts[pts.length - 1].at) + '</text>';
+      svg += '</svg>';
+      var box = el("div", "chart-box");
+      box.innerHTML = svg + '<div class="chart-legend"><span class="sys">Top (systolic)</span><span class="dia">Bottom (diastolic)</span></div>';
+      top.appendChild(box);
+    }
+
+    // readings grouped by day
+    var lastDay = null;
+    rs.forEach(function (r) {
+      var day = r.at.slice(0, 10);
+      if (day !== lastDay) {
+        list.appendChild(el("div", "day-head", day === todayISO() ? "Today, " + fmtDate(day) : fmtDate(day)));
+        lastDay = day;
+      }
+      var b = el("button", "reading");
+      var nums = el("div", "nums", r.sys + "/" + r.dia);
+      if (r.pulse) nums.appendChild(el("small", null, "♥ " + r.pulse));
+      b.appendChild(nums);
+      b.appendChild(el("div", "meta", fmtTime(r.at) + (r.note ? " · " + r.note : "")));
+      b.appendChild(pill(bpCat(r.sys, r.dia)));
+      b.setAttribute("aria-label", r.sys + " over " + r.dia + ", " + fmtTime(r.at) + ", " + CATS[bpCat(r.sys, r.dia)] + ". Tap to edit.");
+      b.addEventListener("click", function () { openBP(r.id); });
+      list.appendChild(b);
+    });
+  }
+
+  var bpEditing = null;
+  function openBP(id) {
+    bpEditing = id;
+    var r = null;
+    for (var i = 0; i < state.readings.length; i++) if (state.readings[i].id === id) r = state.readings[i];
+    var now = localStamp(new Date());
+    $("bpe-title").textContent = r ? "Edit reading" : "Log a reading";
+    $("b-sys").value = r ? r.sys : "";
+    $("b-dia").value = r ? r.dia : "";
+    $("b-pulse").value = r && r.pulse ? r.pulse : "";
+    $("b-date").value = (r ? r.at : now).slice(0, 10);
+    $("b-time").value = (r ? r.at : now).slice(11, 16);
+    $("b-note").value = r ? r.note || "" : "";
+    $("bp-error").style.display = "none";
+    $("bpe-del-row").hidden = !r;
+    show("bpedit");
+  }
+  $("bp-add").addEventListener("click", function () { openBP(null); });
+  $("bp-empty-add").addEventListener("click", function () { openBP(null); });
+  $("bpe-cancel").addEventListener("click", function () { goTab("bp"); });
+  $("bp-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var s = parseInt($("b-sys").value, 10), d = parseInt($("b-dia").value, 10);
+    var p = parseInt($("b-pulse").value, 10);
+    var err = "";
+    if (!(s >= 50 && s <= 260) || !(d >= 30 && d <= 180)) err = "Enter both numbers, like 120 and 80.";
+    else if (d >= s) err = "The top number should be higher than the bottom number.";
+    if (err) { $("bp-error").textContent = err; $("bp-error").style.display = "block"; return; }
+    var at = ($("b-date").value || todayISO()) + "T" + ($("b-time").value || localStamp(new Date()).slice(11, 16));
+    var rec = { sys: s, dia: d, pulse: p >= 30 && p <= 220 ? p : null, at: at, note: $("b-note").value.trim() };
+    var existing = null;
+    for (var i = 0; i < state.readings.length; i++) if (state.readings[i].id === bpEditing) existing = state.readings[i];
+    if (existing) Object.keys(rec).forEach(function (k) { existing[k] = rec[k]; });
+    else { rec.id = uid(); state.readings.push(rec); }
+    save(true);
+    goTab("bp");
+    nudge();
+  });
+  $("bpe-delete").addEventListener("click", function () {
+    confirmSheet("Delete this reading?", "It will be removed from this phone.", "Delete", function () {
+      state.readings = state.readings.filter(function (r) { return r.id !== bpEditing; });
+      save(true);
+      goTab("bp");
+      nudge();
+    });
+  });
+
+  // share the log as a spreadsheet (CSV opens in Numbers, Excel and Google Sheets)
+  $("bp-share").addEventListener("click", function () {
+    var rs = sortedReadings();
+    var q = function (v) { v = v == null ? "" : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var rows = [["Date", "Time", "Systolic", "Diastolic", "Pulse", "Category", "Note"]];
+    rs.forEach(function (r) { rows.push([r.at.slice(0, 10), fmtTime(r.at), r.sys, r.dia, r.pulse || "", CATS[bpCat(r.sys, r.dia)], r.note || ""]); });
+    var csv = rows.map(function (row) { return row.map(q).join(","); }).join("\r\n");
+    var name = "blood-pressure-" + todayISO() + ".csv";
+    var file;
+    try { file = new File([csv], name, { type: "text/csv" }); } catch (e) { file = null; }
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: "Blood pressure log" }).catch(function () {});
+    } else {
+      var url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+      var a = document.createElement("a"); a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    }
+  });
+
+  // ---------- doctors ----------
+  function getDoc(id) {
+    for (var i = 0; i < state.doctors.length; i++) if (state.doctors[i].id === id) return state.doctors[i];
+    return null;
+  }
+  function renderDocs() {
+    var list = $("doc-list");
+    list.innerHTML = "";
+    var docs = state.doctors.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    docs.forEach(function (d) {
+      var c = el("div", "doc");
+      c.appendChild(el("div", "dn", d.name));
+      if (d.type) c.appendChild(el("div", "dt", d.type));
+      if (d.phone) {
+        var pl = el("div", "line");
+        var a = el("a", null, "☎ " + d.phone);
+        a.href = "tel:" + d.phone.replace(/[^\d+]/g, "");
+        pl.appendChild(a); c.appendChild(pl);
+      }
+      if (d.address) {
+        c.appendChild(el("div", "line addr", d.address));
+        var ml = el("div", "line");
+        var m = el("a", null, "Open in Maps ›");
+        m.href = "https://maps.apple.com/?q=" + encodeURIComponent(d.address.replace(/\n/g, ", "));
+        m.target = "_blank"; m.rel = "noopener";
+        ml.appendChild(m); c.appendChild(ml);
+      }
+      var ed = el("button", "edit-link", "Edit");
+      ed.setAttribute("aria-label", "Edit " + d.name);
+      ed.addEventListener("click", function () { openDoc(d.id); });
+      c.appendChild(ed);
+      list.appendChild(c);
+    });
+    $("doc-empty").hidden = docs.length > 0;
+    renderBackupStatus();
+  }
+  function fillDocNames() {
+    var dl = $("doc-names");
+    dl.innerHTML = "";
+    state.doctors.forEach(function (d) { var o = document.createElement("option"); o.value = d.name; dl.appendChild(o); });
+  }
+  var docEditing = null;
+  function openDoc(id) {
+    docEditing = id;
+    var d = id ? getDoc(id) : null;
+    $("doce-title").textContent = d ? "Edit doctor" : "Add doctor";
+    $("g-name").value = d ? d.name : "";
+    $("g-type").value = d ? d.type : "";
+    $("g-phone").value = d ? d.phone : "";
+    $("g-address").value = d ? d.address : "";
+    $("doc-error").style.display = "none";
+    $("doce-del-row").hidden = !d;
+    show("docedit");
+  }
+  $("doc-add").addEventListener("click", function () { openDoc(null); });
+  $("doc-empty-add").addEventListener("click", function () { openDoc(null); });
+  $("doce-cancel").addEventListener("click", function () { goTab("docs"); });
+  $("doc-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var v = { name: $("g-name").value.trim(), type: $("g-type").value.trim(), phone: $("g-phone").value.trim(), address: $("g-address").value.trim() };
+    if (!v.name) { $("doc-error").textContent = "Enter the doctor's name to save."; $("doc-error").style.display = "block"; return; }
+    var d = docEditing ? getDoc(docEditing) : null;
+    if (d) Object.keys(v).forEach(function (k) { d[k] = v[k]; });
+    else { v.id = uid(); state.doctors.push(v); }
+    save(true);
+    goTab("docs");
+    nudge();
+  });
+  $("doce-delete").addEventListener("click", function () {
+    var d = getDoc(docEditing); if (!d) return;
+    confirmSheet("Delete " + d.name + "?", "Their details will be removed from this phone. Medications that list them keep the name.", "Delete", function () {
+      state.doctors = state.doctors.filter(function (x) { return x.id !== docEditing; });
+      save(true);
+      goTab("docs");
+      nudge();
+    });
   });
 
   // ---------- install notice ----------
